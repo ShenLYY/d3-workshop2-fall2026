@@ -70,15 +70,15 @@ git push
 
 **Participation answer** (3 sentences): which driver's strategy differed most from the winner's, and what on the chart shows it?
 
->
+> In the Japanese Grand Prix, Lance Stroll deviated most from winner Max Verstappen’s tyre strategy. Verstappen used medium tyres through lap 21 and hard tyres for the rest of the race, while Stroll used soft tyres through lap 9, hard tyres through lap 30, and then mediums through lap 52. Stroll’s row therefore has three differently coloured bars and two changes of compound, compared with Verstappen’s two bars and one change.
 
 **Assignment** (2 or 3 sentences): pick one race. What does the race trace show that a plain chart of lap times would hide?
 
->
+> In the Japanese Grand Prix, with Verstappen as the reference, the race trace shows Norris staying close and ending about 1.4 seconds behind in the cumulative lap-time data. Antonelli is about 10.7 seconds ahead after lap 22, while Verstappen has already stopped, but falls to about 22.0 seconds behind after lap 32 following his own later stop. A plain lap-time chart shows individual slow laps, but the race trace makes the accumulated gaps and temporary advantages from different pit-stop timing easier to see.
 
 **Bonus** (optional): which race did you add, and why?
 
->
+> Not attempted; no additional race was added beyond the three provided races.
 
 ---
 

@@ -9,10 +9,10 @@
 // so the chart does not depend on color alone.
 //
 // Interactions:
-//   - drag across the chart (d3.brushX): tells chart 3 to zoom to those laps (TODO 7)
-//   - when chart 3 highlights a driver, fade the other drivers' bars (assignment TODO 12)
+//   - drag across the chart (d3.brushX): tells chart 3 to zoom to those laps (STEP 7)
+//   - when chart 3 highlights a driver, fade the other drivers' bars (assignment STEP 12)
 //
-// Follow the TODO comments and refer to demo.js for guidance.
+// Follow the step comments and refer to demo.js for guidance.
 //
 // Read more:
 //   Band scales https://d3js.org/d3-scale/band
@@ -56,7 +56,7 @@ let maxLap = 1;
 // so every driver is included)
 // ============================================================================
 
-// TODO STEP 7 (do it after STEP 6): create the brush ONCE, here.
+// STEP 7 (do it after STEP 6): create the brush ONCE, here.
 // When the user lets go of the mouse ('end'), turn the selected pixels into laps
 // and announce them, so chart 3 can zoom in.
 const brush = d3.brushX()
@@ -66,16 +66,16 @@ const brush = d3.brushX()
 
         // A click without dragging clears the selection: tell chart 3 to show all laps
         if (!event.selection) {
-            announce(/* Define the message name */, /* Define the value that means "all laps" */);
+            announce('lapRange', null);
             return;
         }
 
         // event.selection is [left pixel, right pixel]; turn both into laps
-        const [x0, x1] = event.selection.map(/* Specify the scale function that turns pixels back into laps */);
+        const [x0, x1] = event.selection.map(x.invert);
 
         // A bar for lap n spans from n - 1 to n on the x scale, so:
-        const firstLap = // round x0 down and add 1, but never below lap 1 (Math.floor, Math.max)
-        const lastLap = // round x1 up, at least firstLap + 1, but never above maxLap (Math.ceil, Math.min)
+        const firstLap = Math.min(maxLap - 1, Math.max(1, Math.floor(x0) + 1));
+        const lastLap = Math.min(maxLap, Math.max(firstLap + 1, Math.ceil(x1)));
 
         announce('lapRange', [firstLap, lastLap]);
     });
@@ -88,88 +88,89 @@ onRaceChange(race => {
     const height = margin.top + race.drivers.length * rowHeight + margin.bottom;
     svg.attr('viewBox', `0 0 ${width} ${height}`);
     xLabel.attr('y', height - 6);
-    maxLap = race.maxLap
+    maxLap = race.maxLap;
 
-    // TODO STEP 1: Create the scales
-    const y = // use d3.scaleBand() and race.drivers from the data
-    x = // use d3.scaleLinear() and race.maxLap from the data; don't add const
+    // STEP 1: Create the scales
+    const y = d3.scaleBand().domain(race.drivers.map(d => d.driver_number))
+        .range([margin.top, height - margin.bottom]).padding(0.15);
+    x = d3.scaleLinear().domain([0, race.maxLap]).range([margin.left, width - margin.right]);
 
     const acronym = new Map(race.drivers.map(d => [d.driver_number, d.name_acronym]));
 
-    // TODO STEP 2: Draw the axes; use n => acronym.get(n) to get the driver acronym on y axis
+    // STEP 2: Draw the axes; use n => acronym.get(n) to get the driver acronym on y axis
     xAxisGroup  
-        .attr(/* Define transform to move the x axis to the bottom */)
-        .transition().duration(/* Define duration */)
-        .call(/* Specify function call*/);
+        .attr('transform', `translate(0, ${height - margin.bottom})`)
+        .transition().duration(duration)
+        .call(d3.axisBottom(x).ticks(10).tickFormat(d3.format('d')));
 
     yAxisGroup
-        .transition().duration(/* Define duration */)
-        .call(/* Specify function call*/);
+        .transition().duration(duration)
+        .call(d3.axisLeft(y).tickFormat(n => acronym.get(n)));
   
 
     // Only stints of drivers in the list (rows)
     const stints = race.stints.filter(s => acronym.has(s.driver_number));
   
-    // TODO STEP 3: Join the stints to <g class="stint"> groups, with a KEY so D3 knows which bar is which
+    // STEP 3: Join the stints to <g class="stint"> groups, with a KEY so D3 knows which bar is which
     // On enter, each group gets a rect (the bar) and a text (the compound letter)
     const groups = barsGroup.selectAll('g.stint')
-        .data(stints, /* Define the key: driver number and stint number, e.g. "1-2" */)
+        .data(stints, d => `${d.driver_number}-${d.stint_number}`)
         .join(
             enter => {
                 const g = enter.append('g').attr('class', 'stint').attr('opacity', 0);
-                g.append(/* Append the bar */).attr('rx', 3);
-                g.append(/* Append the letter */).attr('text-anchor', 'middle').attr('dy', '0.35em');
+                g.append('rect').attr('rx', 3);
+                g.append('text').attr('text-anchor', 'middle').attr('dy', '0.35em');
                 return g;
             },
             update => update,
-            exit => exit.transition().duration(/* Define duration */).attr('opacity', 0).remove()
+            exit => exit.transition().duration(duration).attr('opacity', 0).remove()
         );
 
-    const barWidth = d => /* Define the width using x, d.lap_start and d.lap_end */
+    const barWidth = d => x(d.lap_end) - x(d.lap_start - 1);
     
 
-     // TODO STEP 4: Position each rect and color it by compound (the colors are in css/style.css)
+     // STEP 4: Position each rect and color it by compound (the colors are in css/style.css)
     groups.select('rect')
-        .attr('class', d => /* Define the class: the compound name */)
+        .attr('class', d => d.compound)
         .transition().duration(duration)
-        .attr('x', d => /* Define x: where the stint's first lap starts, x(d.lap_start - 1) */)
-        .attr('y', d => /* Define y: the driver's row */)
+        .attr('x', d => x(d.lap_start - 1))
+        .attr('y', d => y(d.driver_number))
         .attr('width', barWidth)
-        .attr('height', /* Define the height: one band of the y scale */);
+        .attr('height', y.bandwidth());
 
-    // TODO STEP 5: Put the compound letter in the middle of each bar
+    // STEP 5: Put the compound letter in the middle of each bar
     groups.select('text')
         .attr('class', d => `stint-letter ${d.compound}-letter`)
-        .text(d => /* Define the letter: the first character of the compound */)
+        .text(d => d.compound === 'UNKNOWN' ? '?' : d.compound[0])
         .transition().duration(duration)
-        .attr('x', d => /* Define x: the middle of the bar */)
-        .attr('y', d => /* Define y: the middle of the row */)
-        .attr('opacity', d => /* Hide the letter (0) on bars narrower than 14 px, otherwise 1 */);
+        .attr('x', d => x(d.lap_start - 1) + barWidth(d) / 2)
+        .attr('y', d => y(d.driver_number) + y.bandwidth() / 2)
+        .attr('opacity', d => barWidth(d) < 14 ? 0 : 1);
 
 
-     // TODO STEP 6: Fade the bars in, so new bars appear smoothly when the race changes
-    groups.transition().duration(/* Define duration */).attr('opacity', /* Define opacity */);
+     // STEP 6: Fade the bars in, so new bars appear smoothly when the race changes
+    groups.transition('appearance').duration(duration).attr('opacity', 1);
 
-    // TODO STEP 7 (continued): stretch the brush over the whole plot area (all driver rows)
+    // STEP 7 (continued): stretch the brush over the whole plot area (all driver rows)
     // and clear any old selection when the race changes
-    brush.extent([[/* Define left */, /* Define top */], [/* Define right */, /* Define bottom */]]);
+    brush.extent([[margin.left, margin.top], [width - margin.right, height - margin.bottom]]);
     brushGroup.call(brush).call(brush.move, null);
     // Then drag across the chart: chart 3 zooms in once you finish the assignment.
 
-    // TODO STEP 8: look at the chart for each race. Who deviated most from the winner's strategy?
+    // STEP 8: look at the chart for each race. Who deviated most from the winner's strategy?
     // Write your answer (3 sentences) at the bottom of README.md, under "Participation answer".
 
-    // TODO STEP 6 (continued): from the next race change on, animate
-    duration = /* Define duration: 750 */
+    // STEP 6 (continued): from the next race change on, animate
+    duration = 750;
 });
 
 // ============================================================================
-// LINKED HIGHLIGHT (part of the assignment, TODO 12 in assignment.js)
+// LINKED HIGHLIGHT (part of the assignment, STEP 12 in assignment.js)
 // ============================================================================
 
-// TODO 12 (assignment): chart 3 announces the driver under the mouse.
+// STEP 12 (assignment): chart 3 announces the driver under the mouse.
 // Listen to it and fade the other drivers' bars
 listen('hoverDriver', driverNumber => {
     barsGroup.selectAll('g.stint')
-        .attr('opacity', d => /* 1 for that driver (and for everyone when driverNumber is null), 0.25 for the others */);
+        .interrupt('appearance').attr('opacity', d => driverNumber === null || d.driver_number === driverNumber ? 1 : 0.25);
 });
