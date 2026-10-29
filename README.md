@@ -41,6 +41,7 @@ You do not need to edit `js/data.js`. It loads the races from `data/` and gives 
 | Japanese Grand Prix 2025 | dry and calm: one pit stop each, no safety car |
 | British Grand Prix 2025 | rain: intermediate tyres, safety cars, five drivers out |
 | Dutch Grand Prix 2025 | three safety cars that bunch the field together |
+| Italian Grand Prix 2024 (bonus) | Leclerc's one-stop strategy versus Piastri's and Norris's two-stop strategies |
 
 ## Bonus (+0.5 points): add one more race
 
@@ -78,7 +79,7 @@ git push
 
 **Bonus** (optional): which race did you add, and why?
 
-> Not attempted; no additional race was added beyond the three provided races.
+> I added the 2024 Italian Grand Prix at Monza using `node scripts/fetch-race.mjs 1244`. I chose it because winner Charles Leclerc used one pit stop, while Oscar Piastri and Lando Norris each used two, making it useful for comparing tyre strategies and how pit-stop timing changes the cumulative race gaps.
 
 ---
 
